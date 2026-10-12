@@ -2,7 +2,8 @@
 require_once __DIR__ . '/../config/config.php';
 
 // Increase timeout for large dataset
-set_time_limit(20);
+set_time_limit(300);
+ini_set('max_execution_time', 300);
 
 requireLogin();
 
@@ -51,7 +52,7 @@ try {
     $devices = $result['data'];
     $recentDevices = [];
 
-    // Parse and sort by last inform time (use fast parser for performance)
+    // Parse and sort by last inform time (use robust GenieACS_Fast parser)
     foreach ($devices as $device) {
         $parsed = GenieACS_Fast::parseDeviceDataFast($device);
 
@@ -72,6 +73,12 @@ try {
 
     // Take only top 10 most recent
     $recentDevices = array_slice($recentDevices, 0, 10);
+
+    // Remove timestamp field from output (internal use only)
+    $recentDevices = array_map(function($device) {
+        unset($device['last_inform_timestamp']);
+        return $device;
+    }, $recentDevices);
 
     jsonResponse([
         'success' => true,
